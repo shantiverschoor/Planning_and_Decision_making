@@ -15,8 +15,8 @@ class RRT_map:
 		self.map.fill((255,255,255))
 		
 		self.node_radius = 4
-		self.node_thickness = 0
-		self.edge_thickness = 0
+		self.node_thickness = 4
+		self.edge_thickness = 4
 
 		self.obstacles = []
 		self.obsdim =  obs_dim
@@ -85,6 +85,7 @@ class RRT_graph:
 	def add_node(self, n, x, y):
 		self.x.insert(n, x)
 		self.y.append(y)
+
 	def remove_node(self, n):
 		self.x.pop(n)
 		self.y.pop(n)
@@ -99,8 +100,6 @@ class RRT_graph:
 		return len(self.x)
 
 	def distance(self, n1, n2):
-		print("x: ", self.x)
-		print("y: ", self.y)
 		print(n1,n2)
 		x1, y1 = self.x[n1], self.y[n1]
 		x2, y2 = self.x[n2], self.y[n2]
