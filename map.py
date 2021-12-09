@@ -12,7 +12,8 @@ class Map():
 		self.start = (None, None)
 		self.goal = (None, None)
 
-		self.marge = 30
+		self.marge = 25
+		self.goal_node = None
 
 		self.count_vert = 0
 
@@ -27,6 +28,7 @@ class Map():
 
 		self.vertices = {}
 		self.edges = []
+		self.connections = {}
 
 		self.colors = {
 			"black" : (0,0,0),
@@ -34,7 +36,8 @@ class Map():
 			"blue" : (0,0,255),
 			"red" : (255,0,0),
 			"green" : (0,255,0),
-			"white" : (255,255,255)
+			"white" : (255,255,255),
+			"yellow": (255,255,0)
 		}
 
 		self.map_window_name = "RRT path planning"
@@ -75,6 +78,7 @@ class Map():
 	def add_edge(self, n1, n2):
 		vertix1, vertix2 = self.vertices[n1], self.vertices[n2]
 		self.edges.append((n2,n1))
+		self.connections[n2] = n1
 		self.draw_edges()
 
 	def draw_vertices(self):
@@ -104,7 +108,7 @@ class Map():
 			pygame.draw.rect(self.map_, self.colors['black'], rect)
 
 	def draw_goal(self):
-		pygame.draw.circle(self.map_, self.colors['green'], self.goal, 6)
+		pygame.draw.circle(self.map_, self.colors['green'], self.goal, 12)
 
 	def display(self):
 		self.map_.fill(self.colors['white'])
@@ -128,10 +132,11 @@ class Map():
 					return True
 		return False
 
-	def nearest(self, n):
-		distance = lambda a, b: math.sqrt(a**2+b**2)
+	def distance(self, a, b):
+		return math.sqrt(a**2+b**2)
 
-		d = distance(self.map_width, self.map_height)
+	def nearest(self, n):
+		d = self.distance(self.map_width, self.map_height)
 		i = None
 		x, y = self.vertices[n]
 
@@ -140,7 +145,7 @@ class Map():
 				continue
 			xtemp, ytemp = self.vertices[key]
 			xdiff, ydiff = x-xtemp, y-ytemp
-			dtemp = distance(xdiff, ydiff)
+			dtemp = self.distance(xdiff, ydiff)
 			if dtemp < d:
 				d = dtemp
 				i = key
@@ -151,11 +156,53 @@ class Map():
 			if self.goal[0] - self.marge < self.vertices[key][0] < self.goal[0] + self.marge\
 			and self.goal[1] - self.marge < self.vertices[key][1] < self.goal[1] + self.marge:
 				print("Goal reached: node", key, "on", self.vertices[key])
+				self.goal_node = key
 				return True
 		return False
 
 	def RRT(self):
-		TIMER = 0.01
+		while not self.goal_reached():
+			accp = False
+
+			while not accp:
+				xrand, yrand = self.sample()
+				nrand = self.add_vertix(xrand, yrand)
+
+				nnear = self.nearest(nrand)
+				xnear, ynear = self.vertices[nnear]
+
+				self.display()
+
+				if not self.crosses_obstacles(nnear, nrand):
+					self.add_edge(nnear, nrand)
+					accp = True
+				else:
+					self.remove_vertix(nrand)
+				
+				self.display()
+		self.draw_path()
+
+	def get_child(self, n):
+		if n == 'start':
+			return [n]
+		else:
+			child = self.connections[n]
+			return  [n] + self.get_child(child)
+
+	def draw_path(self):
+		self.map_.fill(self.colors['white'])
+		path = self.get_child(self.goal_node)
+		for i in range(len(path)-1):
+			pos1, pos2 = self.vertices[path[i]], self.vertices[path[i+1]]
+			pygame.draw.line(self.map_, self.colors['red'], pos1, pos2, 4)
+
+		self.draw_obstacles()
+		self.draw_goal()
+		self.map_window_name = "Nodes used: " + str(self.count_vert)
+		pygame.display.update()
+
+	def RRT_star(self):
+		cdist = self.distance(self.goal[0]-self.start[0], self.goal[1]-self.start[1])
 
 		while not self.goal_reached():
 			accp = False
@@ -168,18 +215,21 @@ class Map():
 				xnear, ynear = self.vertices[nnear]
 
 				self.display()
-				time.sleep(TIMER)
 
-				if not self.crosses_obstacles(nnear, nrand):
+				heu_radius = cdist - self.count_vert * 20
+				rdist = self.distance(self.goal[0]-xrand, self.goal[1]-yrand)
+
+				if self.crosses_obstacles(nnear, nrand) or rdist > heu_radius:
+					self.remove_vertix(nrand)
+
+				else:
 					self.add_edge(nnear, nrand)
 					accp = True
-				else:
-					self.remove_vertix(nrand)
-				
-				self.display()
-				time.sleep(TIMER)
 
-			time.sleep(TIMER)
+				self.display()
+
+		self.draw_path()
+
 
 	def remove_vertix(self, n):
 		del self.vertices[n]
