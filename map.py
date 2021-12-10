@@ -8,28 +8,22 @@ class Map():
 
 	def __init__(self, height, width):
 		self.map_height, self.map_width = height, width
-
 		self.start = (None, None)
 		self.goal = (None, None)
-
-		self.marge = 25
+		self.marge = 15
 		self.goal_node = None
-
 		self.count_vert = 0
-
 		self.obstacles = {	(0,60): (200,10),
 							(100,160): (180,10),
 							(280,0): (10,460),
-							(500,0): (100,240),
+							(500,0): (100,200),
 							(0,450): (150,10),
 							(150,350): (10,200),
 							(500,400): (10,200),
 							(600,400): (10,200)}
 
 		self.vertices = {}
-		self.edges = []
 		self.connections = {}
-
 		self.colors = {
 			"black" : (0,0,0),
 			"gray" : (70,70,70),
@@ -37,8 +31,7 @@ class Map():
 			"red" : (255,0,0),
 			"green" : (0,255,0),
 			"white" : (255,255,255),
-			"yellow": (255,255,0)
-		}
+			"orange": (255,102,0)}
 
 		self.map_window_name = "RRT path planning"
 		pygame.display.set_caption(self.map_window_name)
@@ -77,7 +70,6 @@ class Map():
 
 	def add_edge(self, n1, n2):
 		vertix1, vertix2 = self.vertices[n1], self.vertices[n2]
-		self.edges.append((n2,n1))
 		self.connections[n2] = n1
 		self.draw_edges()
 
@@ -96,8 +88,8 @@ class Map():
 				pygame.draw.circle(self.map_, self.colors['blue'], (x, y), 5)
 
 	def draw_edges(self):
-		for edge in self.edges:
-			n1, n2 = edge
+		for key in self.connections:
+			n1, n2 = self.connections[key], key
 			v1 = self.vertices[n1]
 			v2 = self.vertices[n2]
 			pygame.draw.line(self.map_, self.colors['blue'], v1, v2, 2)
@@ -151,34 +143,29 @@ class Map():
 				i = key
 		return i
 
-	def goal_reached(self):
-		for key in self.vertices:
-			if self.goal[0] - self.marge < self.vertices[key][0] < self.goal[0] + self.marge\
-			and self.goal[1] - self.marge < self.vertices[key][1] < self.goal[1] + self.marge:
-				print("Goal reached: node", key, "on", self.vertices[key])
-				self.goal_node = key
-				return True
+	def is_goal(self, n):
+		if self.goal[0] - self.marge < self.vertices[n][0] < self.goal[0] + self.marge\
+		and self.goal[1] - self.marge < self.vertices[n][1] < self.goal[1] + self.marge:
+			self.goal_node = n
+			return True
 		return False
 
 	def RRT(self):
-		while not self.goal_reached():
+		goal_reached = False
+		while not goal_reached:
 			accp = False
-
 			while not accp:
 				xrand, yrand = self.sample()
 				nrand = self.add_vertix(xrand, yrand)
-
 				nnear = self.nearest(nrand)
 				xnear, ynear = self.vertices[nnear]
-
 				self.display()
-
 				if not self.crosses_obstacles(nnear, nrand):
 					self.add_edge(nnear, nrand)
 					accp = True
+					goal_reached = self.is_goal(nrand)
 				else:
 					self.remove_vertix(nrand)
-				
 				self.display()
 		self.draw_path()
 
@@ -190,46 +177,34 @@ class Map():
 			return  [n] + self.get_child(child)
 
 	def draw_path(self):
-		self.map_.fill(self.colors['white'])
 		path = self.get_child(self.goal_node)
 		for i in range(len(path)-1):
 			pos1, pos2 = self.vertices[path[i]], self.vertices[path[i+1]]
 			pygame.draw.line(self.map_, self.colors['red'], pos1, pos2, 4)
-
-		self.draw_obstacles()
-		self.draw_goal()
-		self.map_window_name = "Nodes used: " + str(self.count_vert)
 		pygame.display.update()
+		print("Nodes used: ",self.count_vert)
 
 	def RRT_star(self):
 		cdist = self.distance(self.goal[0]-self.start[0], self.goal[1]-self.start[1])
-
-		while not self.goal_reached():
+		goal_reached = False
+		while not goal_reached:
 			accp = False
-
 			while not accp:
 				xrand, yrand = self.sample()
 				nrand = self.add_vertix(xrand, yrand)
-
 				nnear = self.nearest(nrand)
 				xnear, ynear = self.vertices[nnear]
-
 				self.display()
-
 				heu_radius = cdist - self.count_vert * 20
 				rdist = self.distance(self.goal[0]-xrand, self.goal[1]-yrand)
-
-				if self.crosses_obstacles(nnear, nrand) or rdist > heu_radius:
-					self.remove_vertix(nrand)
-
-				else:
+				if not self.crosses_obstacles(nnear, nrand):
 					self.add_edge(nnear, nrand)
 					accp = True
-
+					goal_reached = self.is_goal(nrand)
+				else:
+					self.remove_vertix(nrand)
 				self.display()
-
 		self.draw_path()
-
 
 	def remove_vertix(self, n):
 		del self.vertices[n]
@@ -240,7 +215,7 @@ h, w = 600, 800
 b = Map(h, w)
 
 b.set_start(20,20)
-b.set_goal(550, 450)
+b.set_goal(550, 550)
 
 GRID = False
 
@@ -251,7 +226,7 @@ if GRID:
 		for m in numpy.arange(0, w, stepsize):
 			if b.in_free_space((m, n)):
 				b.add_vertix(m+offset, n+offset)
-
+				
 b.RRT()
 
 pygame.event.clear()
