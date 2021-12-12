@@ -28,7 +28,8 @@ a_max = 10 # Maximum longitudinal acceleration [m/s^2]
     Output: Xn_dot - derivative of Xn specified as [x_dot, y_dot, theta_dot, a, delta_dot]
 '''
 
-def car_model(Xn, t, u):
+#def car_model(Xn, u):
+def car_model(Xn, t, u): # Use this for simulation
     # Unpack state variables
     x, y, theta, v, delta = Xn
     x = float(x)
@@ -100,7 +101,6 @@ def new_state(Xn, u):
     Xnew = [float(Xnew[0]), float(Xnew[1]), float(Xnew[2]), float(Xnew[3]), float(Xnew[4])]
     return Xnew
 
-
 '''
     select_input: This function is calculate the next state for the vehicle dynamics. 
     It tries out the delta_f from min_steer angle to max_steer angle to 
@@ -110,22 +110,24 @@ def new_state(Xn, u):
     Output: the best next state available 
 '''
 
-
 def select_input(Xrand, Xnear, obs):
+
+    # Start with minimal input
     delta_dot = delta_dot_min
+    a = 0
 
     bestState = None
     bestDistance = np.inf
 
+    # Try inputs as long as delta_dot and a are below there maximum value
     while delta_dot < delta_dot_max:
-        a = 0
         while a < a_max:
             u = [delta_dot, a] # input
             Xnew = new_state(Xnear, u) # calculate new state
 
             distance = np.linalg.norm(Xnew, Xrand)  # calculate Euclidean distance between two given states
 
-            if distance < bestDistance: #
+            if distance < bestDistance: # Find best path that takes into account the constraints of the non-holonomic mobile robot
                 bestState = Xnew
                 bestDistance = distance
 
@@ -135,39 +137,27 @@ def select_input(Xrand, Xnear, obs):
 
     return bestState
 
-
 '''
-    dist: This function returns the Euclidean distance between two given states
-'''
-
-'''
-def dist(s1, s2):
-    x1 = s1[0]
-    y1 = s1[1]
-
-    x2 = s2[0]
-    y2 = s2[1]
-    return np.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
-'''
-
-'''
-    This function tries out all possible inputs at a given node Xn to 
+    try_input: This function tries out all possible inputs at a given node Xn to 
     calculate all possible outputs
-    Inputs: Xn - the state xg, yg, theta, vy, r of the Xn node
-    Output: ret - all possible outcomes of Xn with all possible inputs u
+    Inputs: Xn - the state x, y, theta, v and delta of the Xn node
+    Output: all - all possible outcomes of Xn with all possible inputs u
 '''
 
 
 def try_input(Xn):
+
+    # Start with minimal input
     delta_dot = delta_dot_min
     a = 0
 
     all = []
 
+    # Try inputs as long as delta_dot and a are below there maximum value
     while delta_dot < delta_dot_max:
         while a < a_max:
             u = [delta_dot, a] # input
-            Xnew = new_state(Xn, u) # calculate new state
+            Xnew = new_state(Xn, u) # calculate new state to try
 
             all.append(Xnew) # add new state to list of all possible states
 
@@ -180,9 +170,10 @@ def try_input(Xn):
 if __name__ == "__main__":
     initial = [4.0, 5.0, 1, 0, 0]
     u = [2, 4]
-    t = np.linspace(0, 10, 101)
-    sol = odeint(car_model, initial, t, args=(u,))
-    print(sol)
+    time_step = 1000
+    t = np.linspace(0, 10, time_step)
+
+    sol = odeint(car_model, initial, t, args=(u,)) # solve a differential equation
 
     plt.plot(t, sol[:, 0], 'b', label='x')
     plt.plot(t, sol[:, 1], 'g', label='y')
