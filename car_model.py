@@ -28,7 +28,7 @@ a_max = 10 # Maximum longitudinal acceleration [m/s^2]
     Output: Xn_dot - derivative of Xn specified as [x_dot, y_dot, theta_dot, a, delta_dot]
 '''
 
-def car_model(Xn, u, t):
+def car_model(Xn, t, u):
     # Unpack state variables
     x, y, theta, v, delta = Xn
     x = float(x)
@@ -177,50 +177,20 @@ def try_input(Xn):
 
     return all
 
-
-'''
-    This simulator is for test only 
-    NOTE: need to add 't' argument in the above Car_Dynamic function to perform test
-'''
-
-
-def TC_Simulate(Mode, initial, time_bound):
-    time_step = 0.05
-    time_bound = float(time_bound)
-    initial = [float(tmp) for tmp in initial]
-    number_points = int(np.ceil(time_bound / time_step))
-    t = [i * time_step for i in range(0, number_points)]
-    if t[-1] != time_step:
-        t.append(time_bound)
-
-    newt = []
-    for step in t:
-        newt.append(float(format(step, '.2f')))
-    t = newt
-    u = [1.0, 0]
-    sol = odeint(car_model, initial, t, args=(u,), hmax=time_step)
-
-    # Construct the final output
-    trace = []
-    for j in range(len(t)):
-        tmp = []
-        tmp.append(t[j])
-        tmp.append(float(sol[j, 0]))
-        tmp.append(float(sol[j, 1]))
-        tmp.append(float(sol[j, 2]))
-        tmp.append(float(sol[j, 3]))
-        tmp.append(float(sol[j, 4]))
-        trace.append(tmp)
-    return trace
-
-
 if __name__ == "__main__":
-    sol = TC_Simulate('Default', [5.0, 5.0, 1, 0, 0], 20)
-    for s in sol:
-        print
-        s
-    a = [row[1] for row in sol]
-    b = [row[2] for row in sol]
+    initial = [4.0, 5.0, 1, 0, 0]
+    u = [2, 4]
+    t = np.linspace(0, 10, 101)
+    sol = odeint(car_model, initial, t, args=(u,))
+    print(sol)
 
-    plt.plot(a, b, '-r')
+    plt.plot(t, sol[:, 0], 'b', label='x')
+    plt.plot(t, sol[:, 1], 'g', label='y')
+    plt.plot(t, sol[:, 2], 'r', label='theta')
+    plt.plot(t, sol[:, 3], 'y', label='v')
+    plt.plot(t, sol[:, 4], 'k', label='delta')
+
+    plt.legend(loc='best')
+    plt.xlabel('t')
+    plt.grid()
     plt.show()
