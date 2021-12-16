@@ -2,7 +2,8 @@ import pygame
 import random
 import math
 import time
-import numpy
+import numpy as np
+import cv2
 
 class Map():
 
@@ -37,6 +38,8 @@ class Map():
 			"white" : (255,255,255),
 			"orange": (255,102,0)}
 
+		self.img_filename = None
+
 		self.map_window_name = "RRT path planning"
 		pygame.display.set_caption(self.map_window_name)
 		self.map_= pygame.display.set_mode((width, height))
@@ -49,6 +52,21 @@ class Map():
 	def set_start(self, x, y):
 		self.vertices['start'] = (x, y)
 		self.start = (x, y)
+
+
+	def import_image(self, filename):
+		self.img_filename = filename
+		obstacles_cs = []
+
+		img = cv2.imread(self.img_filename)
+
+		for i in range(600):
+			for j in range(1200):
+				if np.array_equal(img[i,j], np.array([0,0,0])):
+					obstacles_cs.append((i,j))
+
+		for obstacle_c in obstacles_cs:
+			self.add_obstacle(obstacle_c, (4,4))
 
 	def in_free_space(self, left_corner, ):
 		for obstacle in self.obstacles_space:
@@ -237,17 +255,17 @@ b = Map(h, w)
 b.set_start(430,430)
 b.set_goal(550, 550)
 
-obstacles = {	(0,60): (200,10),
-				(100,160): (180,10),
-				(280,0): (10,460),
-				(500,0): (100,200),
-				(0,450): (150,10),
-				(150,350): (10,200),
-				(500,400): (10,200),
-				(600,400): (10,200)}
+# obstacles = {	(0,60): (200,10),
+# 				(100,160): (180,10),
+# 				(280,0): (10,460),
+# 				(500,0): (100,200),
+# 				(0,450): (150,10),
+# 				(150,350): (10,200),
+# 				(500,400): (10,200),
+# 				(600,400): (10,200)}
 
-for key in obstacles:
-	b.add_obstacle(key, obstacles[key])
+# for key in obstacles:
+# 	b.add_obstacle(key, obstacles[key])
 
 GRID = False
 
@@ -259,7 +277,8 @@ if GRID:
 			if b.in_free_space((m, n)):
 				b.add_vertix(m+offset, n+offset)
 
-b.MD()
+b.import_image('o.png')
+b.RRT()
 
 pygame.event.clear()
 pygame.event.wait(0)
