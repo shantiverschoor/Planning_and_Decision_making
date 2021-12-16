@@ -13,14 +13,15 @@ class Map():
 		self.marge = 15
 		self.goal_node = None
 		self.count_vert = 0
-		self.obstacles = {	(0,60): (200,10),
-							(100,160): (180,10),
-							(280,0): (10,460),
-							(500,0): (100,200),
-							(0,450): (150,10),
-							(150,350): (10,200),
-							(500,400): (10,200),
-							(600,400): (10,200)}
+
+		self.obstacles = [	pygame.Rect((0,0), (self.map_width, 5)),
+							pygame.Rect((0,self.map_height-5), (self.map_width, 5)),
+							pygame.Rect((0,0), (5, self.map_height)),
+							pygame.Rect((self.map_width-5,0), (5,self.map_height))]
+
+		self.obstacles_space = self.obstacles.copy()
+
+		self.bumper_radius = 20
 
 		self.vertices = {}
 		self.connections = {}
@@ -46,9 +47,9 @@ class Map():
 		self.vertices['start'] = (x, y)
 		self.start = (x, y)
 
-	def in_free_space(self, left_corner):
-		for key in self.obstacles:
-			if pygame.Rect(key, self.obstacles[key]).collidepoint(left_corner):
+	def in_free_space(self, left_corner, ):
+		for obstacle in self.obstacles_space:
+			if obstacle.collidepoint(left_corner):
 				return False
 		return True
 
@@ -73,6 +74,15 @@ class Map():
 		self.connections[n2] = n1
 		self.draw_edges()
 
+	def add_obstacle(self, left_corner, dimensions):
+		rect = pygame.Rect(left_corner, dimensions)
+		self.obstacles.append(rect)
+
+		os_left_corner = (left_corner[0] - self.bumper_radius, left_corner[1] - self.bumper_radius)
+		os_dimensions = (dimensions[0] + 2*self.bumper_radius, dimensions[1] + 2*self.bumper_radius)
+		os_rect = pygame.Rect(os_left_corner, os_dimensions)
+		self.obstacles_space.append(os_rect)
+
 	def draw_vertices(self):
 		for key in self.vertices:
 			if key == 'start':
@@ -95,9 +105,8 @@ class Map():
 			pygame.draw.line(self.map_, self.colors['blue'], v1, v2, 2)
 
 	def draw_obstacles(self):
-		for key in self.obstacles:
-			rect = pygame.Rect(key, self.obstacles[key])
-			pygame.draw.rect(self.map_, self.colors['black'], rect)
+		for obstacle in self.obstacles:
+			pygame.draw.rect(self.map_, self.colors['black'], obstacle)
 
 	def draw_goal(self):
 		pygame.draw.circle(self.map_, self.colors['green'], self.goal, 12)
@@ -115,12 +124,12 @@ class Map():
 		acc = 1000
 		x1, y1 = vertix1
 		x2, y2 = vertix2
-		for key in self.obstacles:
+		for obstacle in self.obstacles_space:
 			for i in range(0,acc+1):
 				x = i *((x2-x1)/acc) + x1
 				y = i *((y2-y1)/acc) + y1
 
-				if pygame.Rect(key, self.obstacles[key]).collidepoint(x,y):
+				if obstacle.collidepoint(x,y):
 					return True
 		return False
 
@@ -156,9 +165,12 @@ class Map():
 			accp = False
 			while not accp:
 				xrand, yrand = self.sample()
+
 				nrand = self.add_vertix(xrand, yrand)
 				nnear = self.nearest(nrand)
+
 				xnear, ynear = self.vertices[nnear]
+
 				self.display()
 				if not self.crosses_obstacles(nnear, nrand):
 					self.add_edge(nnear, nrand)
@@ -184,28 +196,6 @@ class Map():
 		pygame.display.update()
 		print("Nodes used: ",self.count_vert)
 
-	def RRT_star(self):
-		cdist = self.distance(self.goal[0]-self.start[0], self.goal[1]-self.start[1])
-		goal_reached = False
-		while not goal_reached:
-			accp = False
-			while not accp:
-				xrand, yrand = self.sample()
-				nrand = self.add_vertix(xrand, yrand)
-				nnear = self.nearest(nrand)
-				xnear, ynear = self.vertices[nnear]
-				self.display()
-				heu_radius = cdist - self.count_vert * 20
-				rdist = self.distance(self.goal[0]-xrand, self.goal[1]-yrand)
-				if not self.crosses_obstacles(nnear, nrand):
-					self.add_edge(nnear, nrand)
-					accp = True
-					goal_reached = self.is_goal(nrand)
-				else:
-					self.remove_vertix(nrand)
-				self.display()
-		self.draw_path()
-
 	def remove_vertix(self, n):
 		del self.vertices[n]
 		self.count_vert -= 1
@@ -216,6 +206,18 @@ b = Map(h, w)
 
 b.set_start(20,20)
 b.set_goal(550, 550)
+
+obstacles = {	(0,60): (200,10),
+				(100,160): (180,10),
+				(280,0): (10,460),
+				(500,0): (100,200),
+				(0,450): (150,10),
+				(150,350): (10,200),
+				(500,400): (10,200),
+				(600,400): (10,200)}
+
+for key in obstacles:
+	b.add_obstacle(key, obstacles[key])
 
 GRID = False
 
