@@ -10,18 +10,21 @@ class Map():
 		self.map_height, self.map_width = height, width
 		self.start = (None, None)
 		self.goal = (None, None)
-		self.marge = 15
+		self.marge = 20
 		self.goal_node = None
 		self.count_vert = 0
+
+		self.bumper_radius = 5
 
 		self.obstacles = [	pygame.Rect((0,0), (self.map_width, 5)),
 							pygame.Rect((0,self.map_height-5), (self.map_width, 5)),
 							pygame.Rect((0,0), (5, self.map_height)),
 							pygame.Rect((self.map_width-5,0), (5,self.map_height))]
 
-		self.obstacles_space = self.obstacles.copy()
-
-		self.bumper_radius = 20
+		self.obstacles_space = [pygame.Rect((0,0), (self.map_width, 5 + self.bumper_radius)),
+								pygame.Rect((0,self.map_height - 5 - self.bumper_radius), (self.map_width, 5 + self.bumper_radius)),
+								pygame.Rect((0,0), (5 + self.bumper_radius, self.map_height)),
+								pygame.Rect((self.map_width - 5 - self.bumper_radius,0), (5 + self.bumper_radius,self.map_height))]
 
 		self.vertices = {}
 		self.connections = {}
@@ -66,13 +69,11 @@ class Map():
 	def add_vertix(self, x, y):
 		self.count_vert += 1
 		self.vertices[self.count_vert] = (x, y)
-		self.draw_vertices()
 		return self.count_vert
 
 	def add_edge(self, n1, n2):
 		vertix1, vertix2 = self.vertices[n1], self.vertices[n2]
 		self.connections[n2] = n1
-		self.draw_edges()
 
 	def add_obstacle(self, left_corner, dimensions):
 		rect = pygame.Rect(left_corner, dimensions)
@@ -88,11 +89,9 @@ class Map():
 			if key == 'start':
 				x, y = self.vertices[key]
 				pygame.draw.circle(self.map_, self.colors['red'], (x,y), 4)
-
 			elif key == 'goal':
 				x, y = self.vertices[key]
 				pygame.draw.circle(self.map_, self.colors['green'], (x,y), 6)
-
 			else:
 				x, y = self.vertices[key]
 				pygame.draw.circle(self.map_, self.colors['blue'], (x, y), 5)
@@ -159,18 +158,46 @@ class Map():
 			return True
 		return False
 
+	def MD(self):
+
+		goal_reached = False
+
+		while not goal_reached:
+			xdiff, ydiff = self.goal[0] - self.start[0], self.goal[1] - self.start[1]
+			dist = self.distance(xdiff, ydiff)
+
+			xsample, ysample = self.sample()
+			xdiff, ydiff = xsample - self.goal[0], ysample - self.goal[1]
+			new_dist = self.distance(xdiff, ydiff)
+
+			#sample node close to goal
+			if new_dist < dist:
+				nsample = self.add_vertix(xsample, ysample)
+				nnear = self.nearest(nsample)
+				xnear, ynear = self.vertices[nnear]
+
+				self.display()
+
+				if not self.crosses_obstacles(nnear, nsample):
+					self.add_edge(nnear, nsample)
+					goal_reached = self.is_goal(nsample)
+
+				else:
+					self.remove_vertix(nsample)
+
+				self.display()
+
+		self.draw_path()
+
 	def RRT(self):
 		goal_reached = False
 		while not goal_reached:
 			accp = False
 			while not accp:
 				xrand, yrand = self.sample()
-
 				nrand = self.add_vertix(xrand, yrand)
 				nnear = self.nearest(nrand)
-
 				xnear, ynear = self.vertices[nnear]
-
 				self.display()
 				if not self.crosses_obstacles(nnear, nrand):
 					self.add_edge(nnear, nrand)
@@ -180,6 +207,8 @@ class Map():
 					self.remove_vertix(nrand)
 				self.display()
 		self.draw_path()
+
+
 
 	def get_child(self, n):
 		if n == 'start':
@@ -201,10 +230,11 @@ class Map():
 		self.count_vert -= 1
 		self.draw_vertices()
 
+
 h, w = 600, 800
 b = Map(h, w)
 
-b.set_start(20,20)
+b.set_start(430,430)
 b.set_goal(550, 550)
 
 obstacles = {	(0,60): (200,10),
@@ -228,8 +258,8 @@ if GRID:
 		for m in numpy.arange(0, w, stepsize):
 			if b.in_free_space((m, n)):
 				b.add_vertix(m+offset, n+offset)
-				
-b.RRT()
+
+b.MD()
 
 pygame.event.clear()
 pygame.event.wait(0)
