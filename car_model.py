@@ -12,7 +12,7 @@ delta_dot_max = 0.4 # Maximum steering angular velocity [rad/s]
 
 v_min = 0 # Minimum longitudinal velocity [m/s]
 v_max = 15/3.6 # Maximum longitudinal velocity [m/s]
-a_max = 10 # Maximum longitudinal acceleration [m/s^2]
+a_max = 2 # Maximum longitudinal acceleration [m/s^2]
 
 '''
     The implementation of the kinematic bicycle model in the RRT path planning algorithm:
@@ -29,7 +29,7 @@ a_max = 10 # Maximum longitudinal acceleration [m/s^2]
 '''
 
 #def car_model(Xn, u):
-def car_model(Xn, t, u): # Use this for simulation
+def car_model(Xn, u): # Use this for simulation
     # Unpack state variables
     x, y, theta, v, delta = Xn
     x = float(x)
@@ -144,7 +144,6 @@ def select_input(Xrand, Xnear, obs):
     Output: all - all possible outcomes of Xn with all possible inputs u
 '''
 
-
 def try_input(Xn):
 
     # Start with minimal input
@@ -166,22 +165,3 @@ def try_input(Xn):
         delta_dot += 0.05  # increment delta_dot per iteration to find best input
 
     return all
-
-if __name__ == "__main__":
-    initial = [4.0, 5.0, 1, 0, 0]
-    u = [2, 4]
-    time_step = 1000
-    t = np.linspace(0, 10, time_step)
-
-    sol = odeint(car_model, initial, t, args=(u,)) # solve a differential equation
-
-    plt.plot(t, sol[:, 0], 'b', label='x')
-    plt.plot(t, sol[:, 1], 'g', label='y')
-    plt.plot(t, sol[:, 2], 'r', label='theta')
-    plt.plot(t, sol[:, 3], 'y', label='v')
-    plt.plot(t, sol[:, 4], 'k', label='delta')
-
-    plt.legend(loc='best')
-    plt.xlabel('t')
-    plt.grid()
-    plt.show()
