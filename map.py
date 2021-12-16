@@ -3,7 +3,6 @@ import random
 import math
 import time
 import numpy as np
-import cv2
 
 class Map():
 
@@ -52,21 +51,6 @@ class Map():
 	def set_start(self, x, y):
 		self.vertices['start'] = (x, y)
 		self.start = (x, y)
-
-
-	def import_image(self, filename):
-		self.img_filename = filename
-		obstacles_cs = []
-
-		img = cv2.imread(self.img_filename)
-
-		for i in range(600):
-			for j in range(1200):
-				if np.array_equal(img[i,j], np.array([0,0,0])):
-					obstacles_cs.append((i,j))
-
-		for obstacle_c in obstacles_cs:
-			self.add_obstacle(obstacle_c, (4,4))
 
 	def in_free_space(self, left_corner, ):
 		for obstacle in self.obstacles_space:
@@ -176,36 +160,13 @@ class Map():
 			return True
 		return False
 
-	def MD(self):
+	def dist(self, s1, s2):
+		x1 = s1[0]
+		y1 = s1[1]
 
-		goal_reached = False
-
-		while not goal_reached:
-			xdiff, ydiff = self.goal[0] - self.start[0], self.goal[1] - self.start[1]
-			dist = self.distance(xdiff, ydiff)
-
-			xsample, ysample = self.sample()
-			xdiff, ydiff = xsample - self.goal[0], ysample - self.goal[1]
-			new_dist = self.distance(xdiff, ydiff)
-
-			#sample node close to goal
-			if new_dist < dist:
-				nsample = self.add_vertix(xsample, ysample)
-				nnear = self.nearest(nsample)
-				xnear, ynear = self.vertices[nnear]
-
-				self.display()
-
-				if not self.crosses_obstacles(nnear, nsample):
-					self.add_edge(nnear, nsample)
-					goal_reached = self.is_goal(nsample)
-
-				else:
-					self.remove_vertix(nsample)
-
-				self.display()
-
-		self.draw_path()
+		x2 = s2[0]
+		y2 = s2[1]
+		return np.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 
 	def RRT(self):
 		goal_reached = False
@@ -216,8 +177,10 @@ class Map():
 				nrand = self.add_vertix(xrand, yrand)
 				nnear = self.nearest(nrand)
 				xnear, ynear = self.vertices[nnear]
+
 				self.display()
 				if not self.crosses_obstacles(nnear, nrand):
+
 					self.add_edge(nnear, nrand)
 					accp = True
 					goal_reached = self.is_goal(nrand)
@@ -225,8 +188,6 @@ class Map():
 					self.remove_vertix(nrand)
 				self.display()
 		self.draw_path()
-
-
 
 	def get_child(self, n):
 		if n == 'start':
@@ -249,23 +210,34 @@ class Map():
 		self.draw_vertices()
 
 
-h, w = 600, 800
+h, w = 600, 1000
 b = Map(h, w)
 
-b.set_start(430,430)
-b.set_goal(550, 550)
+b.set_start(50, 50)
+b.set_goal(950, 550)
 
-# obstacles = {	(0,60): (200,10),
-# 				(100,160): (180,10),
-# 				(280,0): (10,460),
-# 				(500,0): (100,200),
-# 				(0,450): (150,10),
-# 				(150,350): (10,200),
-# 				(500,400): (10,200),
-# 				(600,400): (10,200)}
+wall = 10
 
-# for key in obstacles:
-# 	b.add_obstacle(key, obstacles[key])
+sim1 = {(0,100): (200,wall),
+		(300,300): (50,30),
+		(400,0): (wall,460),
+		(0,450): (150,wall),
+		(150,350): (10,200),
+		(500,100): (50,30),
+		(500,400): (50,30),
+		(660,300): (50,30),
+		(800, 200): (wall, 400)}
+
+
+sim2 = {(0,150): (400,wall),
+	   (550+wall,0): (wall,h-150),
+	   (400,150): (wall,h-150),
+	   (550+wall,h-150): (w-150, wall)}
+
+obstacles = sim1
+
+for key in obstacles:
+	b.add_obstacle(key, obstacles[key])
 
 GRID = False
 
@@ -277,7 +249,6 @@ if GRID:
 			if b.in_free_space((m, n)):
 				b.add_vertix(m+offset, n+offset)
 
-b.import_image('o.png')
 b.RRT()
 
 pygame.event.clear()
