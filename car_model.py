@@ -28,7 +28,6 @@ a_max = 2 # Maximum longitudinal acceleration [m/s^2]
     Output: Xn_dot - derivative of Xn specified as [x_dot, y_dot, theta_dot, a, delta_dot]
 '''
 
-#def car_model(Xn, u):
 def car_model(Xn, u): # Use this for simulation
     # Unpack state variables
     x, y, theta, v, delta = Xn
