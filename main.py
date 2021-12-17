@@ -8,7 +8,7 @@ b = rrt(h, w)
 b.set_start(50, 50)
 b.set_goal(900, 550)
 
-obstacles = sim1
+obstacles = sim2
 
 for key in obstacles:
 	b.add_obstacle(key, obstacles[key])

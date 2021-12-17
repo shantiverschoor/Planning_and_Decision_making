@@ -10,7 +10,7 @@ class RRT_map():
 		self.map_height, self.map_width = height, width
 		self.start = (None, None)
 		self.goal = (None, None)
-		self.marge = 15
+		self.marge = 20
 		self.goal_node = None
 		self.count_vert = 0
 
@@ -29,7 +29,7 @@ class RRT_map():
 		self.vertices = {}
 		self.connections = {}
 
-		self.states = {}
+		self.path = None
 		
 		self.colors = {
 			"black" : (0,0,0),
@@ -61,18 +61,23 @@ class RRT_map():
 				return False
 		return True
 
-	def sample(self):
-		x = random.uniform(0, self.map_width)
-		y = random.uniform(0, self.map_height)
+	def sample(self, n = None, radius = 20):
 
-		while not self.in_free_space((x, y)):
-			x = random.uniform(0, self.map_width)
-			y = random.uniform(0, self.map_height)
+		in_free_space = False
+		
+		x_min = 0 if n is None else self.vertices[n][0] - radius
+		x_max = self.map_width if n is None else self.vertices[n][0] + radius
+
+		y_min = 0 if n is None else self.vertices[n][1] - radius
+		y_max = self.map_height if n is None else self.vertices[n][1] + radius
+
+		while not in_free_space:
+			x = random.uniform(x_min, x_max)
+			y = random.uniform(y_min, y_max)
+			in_free_space = self.in_free_space((x, y))
 
 		return x, y
 
-	def sample_kin(self, state):
-		pass
 
 	def add_vertix(self, x, y):
 		self.count_vert += 1
@@ -179,42 +184,58 @@ class RRT_map():
 		return np.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 
 	def RRT(self):
+		base_vertix = 'start'
+		heu = self.distance(self.goal[0] - self.start[0], self.goal[1] - self.start[1])
 		goal_reached = False
 		while not goal_reached:
-			accp = False
-			while not accp:
-				xrand, yrand = self.sample()
+			iter_ = False
+			while not iter_:
+				xrand, yrand = self.sample(n=base_vertix, radius = 80)
 				nrand = self.add_vertix(xrand, yrand)
 				nnear = self.nearest(nrand)
 				xnear, ynear = self.vertices[nnear]
 
 				self.display()
-				if not self.crosses_obstacles(nnear, nrand):
 
+
+				dist = self.distance(xrand-self.goal[0], yrand-self.goal[1])
+
+				if not self.crosses_obstacles(nnear, nrand) and dist < heu:
 					self.add_edge(nnear, nrand)
-					accp = True
+					base_vertix = nrand
+					heu = dist
+					iter_ = True
 					goal_reached = self.is_goal(nrand)
 				else:
 					self.remove_vertix(nrand)
+
 				self.display()
-		self.draw_path()
+
+		self.path = self.get_path(self.goal_node)
+		
+		self.draw_waypoints()
+
 		pygame.event.clear()
 		pygame.event.wait(0)
 
-	def get_child(self, n):
+	def get_path(self, n):
 		if n == 'start':
 			return [n]
 		else:
 			child = self.connections[n]
-			return  [n] + self.get_child(child)
+			return  [n] + self.get_path(child)
 
 	def draw_path(self):
-		path = self.get_child(self.goal_node)
-		for i in range(len(path)-1):
-			pos1, pos2 = self.vertices[path[i]], self.vertices[path[i+1]]
+		for i in range(len(self.path)-1):
+			pos1, pos2 = self.vertices[self.path[i]], self.vertices[self.path[i+1]]
 			pygame.draw.line(self.map_, self.colors['red'], pos1, pos2, 4)
 		pygame.display.update()
-		print("Nodes used: ",self.count_vert)
+
+	def draw_waypoints(self):
+		for n in self.path:
+			loc = self.vertices[n]
+			pygame.draw.circle(self.map_, self.colors['red'], loc , 6)
+		pygame.display.update()
 
 	def remove_vertix(self, n):
 		del self.vertices[n]
