@@ -4,7 +4,7 @@ import math
 import time
 import numpy as np
 
-class Map():
+class RRT_map():
 
 	def __init__(self, height, width):
 		self.map_height, self.map_width = height, width
@@ -28,6 +28,9 @@ class Map():
 
 		self.vertices = {}
 		self.connections = {}
+
+		self.states = {}
+		
 		self.colors = {
 			"black" : (0,0,0),
 			"gray" : (70,70,70),
@@ -67,6 +70,9 @@ class Map():
 			y = random.uniform(0, self.map_height)
 
 		return x, y
+
+	def sample_kin(self, state):
+		pass
 
 	def add_vertix(self, x, y):
 		self.count_vert += 1
@@ -192,6 +198,8 @@ class Map():
 					self.remove_vertix(nrand)
 				self.display()
 		self.draw_path()
+		pygame.event.clear()
+		pygame.event.wait(0)
 
 	def get_child(self, n):
 		if n == 'start':
@@ -212,65 +220,3 @@ class Map():
 		del self.vertices[n]
 		self.count_vert -= 1
 		self.draw_vertices()
-
-
-h, w = 600, 1000
-b = Map(h, w)
-
-b.set_start(50, 50)
-b.set_goal(900, 550)
-
-wall = 10
-
-# Map 1 driving through corners
-sim1 = {(0,150): (400,wall),
-	   (550+wall,0): (wall,h-150),
-	   (400,150): (wall,h-150),
-	   (550+wall,h-150): (w-150, wall)}
-
-# Map 2 with some static obstacles
-sim2 = {(0,100): (200,wall),
-		(300,300): (50,30),
-		(400,0): (wall,460),
-		(0,450): (150,wall),
-		(150,350): (10,200),
-		(500,100): (50,30),
-		(500,400): (50,30),
-		(660,300): (50,30),
-		(800, 200): (wall, 400)}
-
-
-
-# Map 3 driving through a maze
-sim3 = {(125, 0): (wall, 225),
-		(125, 350): (wall, 100),
-		(125, 450): (500, wall),
-		(300, 450): (10, 150),
-		(125, 350-wall): (200, wall),
-		(325,125): (wall, 350-125),
-		(475, 0): (wall, 320),
-		(625, 250+wall): (wall, 200),
-		(625, 250): (150, wall),
-		(775, 150): (wall, 100+wall),
-		(625, 150): (150, wall),
-		(775, 400): (225, wall)}
-
-obstacles = sim3
-
-for key in obstacles:
-	b.add_obstacle(key, obstacles[key])
-
-GRID = False
-
-if GRID:
-	stepsize = 50
-	offset = stepsize/2
-	for n in numpy.arange(0, h, stepsize):
-		for m in numpy.arange(0, w, stepsize):
-			if b.in_free_space((m, n)):
-				b.add_vertix(m+offset, n+offset)
-
-b.RRT()
-
-pygame.event.clear()
-pygame.event.wait(0)
