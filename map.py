@@ -10,11 +10,11 @@ class Map():
 		self.map_height, self.map_width = height, width
 		self.start = (None, None)
 		self.goal = (None, None)
-		self.marge = 20
+		self.marge = 15
 		self.goal_node = None
 		self.count_vert = 0
 
-		self.bumper_radius = 5
+		self.bumper_radius = 15
 
 		self.obstacles = [	pygame.Rect((0,0), (self.map_width, 5)),
 							pygame.Rect((0,self.map_height-5), (self.map_width, 5)),
@@ -107,7 +107,11 @@ class Map():
 
 	def draw_obstacles(self):
 		for obstacle in self.obstacles:
-			pygame.draw.rect(self.map_, self.colors['black'], obstacle)
+			pygame.draw.rect(self.map_, self.colors['black'], obstacle) # Draw obstacles
+
+		for obstacle in self.obstacles_space:
+			pygame.draw.rect(self.map_, self.colors['gray'], obstacle, 1) # Draw obstacles enlarged safety radius
+
 
 	def draw_goal(self):
 		pygame.draw.circle(self.map_, self.colors['green'], self.goal, 12)
@@ -214,11 +218,18 @@ h, w = 600, 1000
 b = Map(h, w)
 
 b.set_start(50, 50)
-b.set_goal(950, 550)
+b.set_goal(900, 550)
 
 wall = 10
 
-sim1 = {(0,100): (200,wall),
+# Map 1 driving through corners
+sim1 = {(0,150): (400,wall),
+	   (550+wall,0): (wall,h-150),
+	   (400,150): (wall,h-150),
+	   (550+wall,h-150): (w-150, wall)}
+
+# Map 2 with some static obstacles
+sim2 = {(0,100): (200,wall),
 		(300,300): (50,30),
 		(400,0): (wall,460),
 		(0,450): (150,wall),
@@ -229,12 +240,22 @@ sim1 = {(0,100): (200,wall),
 		(800, 200): (wall, 400)}
 
 
-sim2 = {(0,150): (400,wall),
-	   (550+wall,0): (wall,h-150),
-	   (400,150): (wall,h-150),
-	   (550+wall,h-150): (w-150, wall)}
 
-obstacles = sim1
+# Map 3 driving through a maze
+sim3 = {(125, 0): (wall, 225),
+		(125, 350): (wall, 100),
+		(125, 450): (500, wall),
+		(300, 450): (10, 150),
+		(125, 350-wall): (200, wall),
+		(325,125): (wall, 350-125),
+		(475, 0): (wall, 320),
+		(625, 250+wall): (wall, 200),
+		(625, 250): (150, wall),
+		(775, 150): (wall, 100+wall),
+		(625, 150): (150, wall),
+		(775, 400): (225, wall)}
+
+obstacles = sim3
 
 for key in obstacles:
 	b.add_obstacle(key, obstacles[key])
