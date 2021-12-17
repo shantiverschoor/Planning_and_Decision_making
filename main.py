@@ -23,4 +23,4 @@ if GRID:
 			if b.in_free_space((m, n)):
 				b.add_vertix(m+offset, n+offset)
 
-b.RRT()
+b.HRRT()

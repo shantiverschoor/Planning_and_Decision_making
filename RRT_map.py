@@ -184,26 +184,19 @@ class RRT_map():
 		return np.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 
 	def RRT(self):
-		base_vertix = 'start'
-		heu = self.distance(self.goal[0] - self.start[0], self.goal[1] - self.start[1])
 		goal_reached = False
 		while not goal_reached:
 			iter_ = False
 			while not iter_:
-				xrand, yrand = self.sample(n=base_vertix, radius = 80)
+				xrand, yrand = self.sample(n=None)
 				nrand = self.add_vertix(xrand, yrand)
 				nnear = self.nearest(nrand)
 				xnear, ynear = self.vertices[nnear]
 
 				self.display()
 
-
-				dist = self.distance(xrand-self.goal[0], yrand-self.goal[1])
-
-				if not self.crosses_obstacles(nnear, nrand) and dist < heu:
+				if not self.crosses_obstacles(nnear, nrand):
 					self.add_edge(nnear, nrand)
-					base_vertix = nrand
-					heu = dist
 					iter_ = True
 					goal_reached = self.is_goal(nrand)
 				else:
@@ -214,6 +207,53 @@ class RRT_map():
 		self.path = self.get_path(self.goal_node)
 		
 		self.draw_waypoints()
+		self.draw_path()
+
+		pygame.event.clear()
+		pygame.event.wait(0)
+
+	def HRRT(self):
+
+		base_vertix = 'start'
+		heu = self.distance(self.goal[0] - self.start[0], self.goal[1] - self.start[1])
+		goal_reached = False
+
+		while not goal_reached:
+			iter_ = False
+
+			heu_denied = 0
+
+			while not iter_:
+				xrand, yrand = self.sample(n=base_vertix, radius=40)
+				nrand = self.add_vertix(xrand, yrand)
+				nnear = self.nearest(nrand)
+				xnear, ynear = self.vertices[nnear]
+
+				self.display()
+
+				dist = self.distance(xrand-self.goal[0], yrand-self.goal[1])
+
+				if not self.crosses_obstacles(nnear, nrand)\
+				and dist < (1+heu_denied*(1/100)) * heu\
+				and np.abs(xnear-xrand) + np.abs(ynear-yrand) > 20:
+
+					self.add_edge(nnear, nrand)
+					base_vertix = nrand
+					heu = dist
+					iter_ = True
+					goal_reached = self.is_goal(nrand)
+
+				else:
+					heu_denied += 1
+					print(heu_denied)
+					self.remove_vertix(nrand)
+
+				self.display()
+
+		self.path = self.get_path(self.goal_node)
+		
+		self.draw_waypoints()
+		self.draw_path()
 
 		pygame.event.clear()
 		pygame.event.wait(0)
@@ -234,7 +274,7 @@ class RRT_map():
 	def draw_waypoints(self):
 		for n in self.path:
 			loc = self.vertices[n]
-			pygame.draw.circle(self.map_, self.colors['red'], loc , 6)
+			pygame.draw.circle(self.map_, self.colors['orange'], loc , 6)
 		pygame.display.update()
 
 	def remove_vertix(self, n):
