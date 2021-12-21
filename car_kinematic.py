@@ -75,5 +75,5 @@ def new_state(Xn, u):
     delta_t = 0.2 # Step size
 
     Xnew = Xn + (1/6) * (k1 + 2 * k2 + 2 * k3 + k4) * delta_t
-    Xnew = [float(Xnew[0]), float(Xnew[1]), float(Xnew[2]), float(Xnew[3]), float(Xnew[4])]
+    Xnew = [float(Xnew[0]), float(Xnew[1]), float(Xnew[2])]
     return Xnew

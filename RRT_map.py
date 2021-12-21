@@ -16,7 +16,7 @@ class RRT_map():
 
 		self.bumper_radius = 15
 
-		self.obstacles = [	pygame.Rect((0,0), (self.map_width, 5)),
+		self.obstacles = [pygame.Rect((0,0), (self.map_width, 5)),
 							pygame.Rect((0,self.map_height-5), (self.map_width, 5)),
 							pygame.Rect((0,0), (5, self.map_height)),
 							pygame.Rect((self.map_width-5,0), (5,self.map_height))]
