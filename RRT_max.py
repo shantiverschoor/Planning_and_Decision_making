@@ -73,6 +73,7 @@ class RRTGraph:
         self.goalstate = None
         self.path = []
 
+    # Make obstacles and safety boundaries (David)
     def makeobs(self):
         wall = 10
 
