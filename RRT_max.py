@@ -76,12 +76,25 @@ class RRTGraph:
     def makeobs(self):
         wall = 10
 
+        # Map 1 driving through corners
         obs = [pygame.Rect(0,150, 400, wall),
                pygame.Rect(0,150, 400, wall),
                pygame.Rect(550+wall, 0, wall, self.height-150),
                pygame.Rect(400, 150, wall, self.height-150),
                pygame.Rect(550+wall, self.height-150, self.width-150, wall)]
 
+        # Map 2 with some static obstacles
+        obs = [pygame.Rect(0, 100, 200, wall),
+               pygame.Rect(300, 300, 50, 30),
+               pygame.Rect(400, 0, wall, 460),
+               pygame.Rect(0, 450, 150, wall),
+               pygame.Rect(150, 350, 10, 200),
+               pygame.Rect(500, 100, 50, 30),
+               pygame.Rect(500, 400, 50, 30),
+               pygame.Rect(660, 300, 50, 30),
+               pygame.Rect(800, 200, wall, 400)]
+
+        # Map 3 driving through a maze
         obs = [pygame.Rect(125, 0, wall, 225),
                pygame.Rect(125, 350, wall, 100),
                pygame.Rect(125, 450, 500, wall),
@@ -95,13 +108,12 @@ class RRTGraph:
                pygame.Rect(625, 150, 150, wall),
                pygame.Rect(775, 400, 225, wall)]
 
-        self.obstacles = obs.copy()
+        self.obstacles = obs.copy() # use this for checking whether samples crosses an obstacle
         return obs
 
     def add_node(self, n, x, y):
         self.x.insert(n, x)
         self.y.append(y)
-
 
     def remove_node(self, n):
         self.x.pop(n)
@@ -116,6 +128,7 @@ class RRTGraph:
     def number_of_nodes(self):
         return len(self.x)
 
+    # Euclidean distance
     def distance(self, n1, n2):
         (x1, y1) = (self.x[n1], self.y[n1])
         (x2, y2) = (self.x[n2], self.y[n2])
@@ -123,11 +136,13 @@ class RRTGraph:
         py = (float(y1)-float(y2))**2
         return (px+py)**(0.5)
 
+    # Create random samples
     def sample_env(self):
         x = int(random.uniform(0, self.width))
         y = int(random.uniform(0, self.height))
         return x, y
 
+    # Check closest neighbors
     def nearest(self, n):
         dmin = self.distance(0, n)
         nnear = 0
@@ -137,6 +152,7 @@ class RRTGraph:
                 nnear = i
         return nnear
 
+    # Sample only in the Free space
     def isFree(self):
         n = self.number_of_nodes()-1 # check last node in the list
         (x, y) = (self.x[n], self.y[n])
@@ -148,6 +164,7 @@ class RRTGraph:
                 return False # Sample is in the obstacle space
         return True # Sample is in the Free space
 
+    # obstacle detection
     def crossObstacle(self, x1, x2, y1, y2):
         obs = self.obstacles.copy()
         while len(obs) > 0:
@@ -169,10 +186,10 @@ class RRTGraph:
             self.add_edge(n1, n2) # Create connection between two nodes if it doesn't crosses an obstacle
             return True
 
-    # create a node between two nodes given a predefined radius
+    # Create a node between two nodes given a predefined radius
     def step(self, nnear, nrand):
         d = self.distance(nnear, nrand)
-        dmax = 35 # maximum radius of each edge
+        dmax = 35 # maximum radius of each edge (fine tune parameter)
 
         if d > dmax:
             u = dmax/d
@@ -206,6 +223,8 @@ class RRTGraph:
             self.path.append(0)
         return self.goalFlag
 
+    # Get path coordinates from start to goal
+    # This will be used when simulating the drive of the mobile robot
     def getPathCoords(self):
         pathCoords = []
         for node in self.path:
