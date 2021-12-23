@@ -2,6 +2,7 @@ import pygame
 from RRT_max import RRTGraph
 from RRT_max import RRTMap
 import time
+from obstacles_max import *
 
 def main():
     dimensions = (600, 1000)
@@ -16,7 +17,8 @@ def main():
     map = RRTMap(start, goal, dimensions)
     graph = RRTGraph(start, goal, dimensions)
 
-    obstacles = graph.makeobs()
+    obstacles = graph.makeObs(obs1) #set obstacle map
+
     map.drawMap(obstacles)
 
     # David check

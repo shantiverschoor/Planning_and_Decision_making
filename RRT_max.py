@@ -32,21 +32,20 @@ class RRTMap:
         # Obstacles
         self.obstacles = []
 
-    def drawMap(self, obstacles):
+    def drawMap(self, objects):
         pygame.draw.circle(self.map, self.green, self.start, self.nodeRad+5, 0)
         pygame.draw.circle(self.map, self.green, self.goal, self.nodeRad + 20, 1)
-        self.drawObs(obstacles)
+        self.drawObs(objects)
 
     def drawPath(self, path):
         for node in path:
             pygame.draw.circle(self.map, self.red, node, self.nodeRad+3, 0)
 
-    def drawObs(self, obstacles):
-        obstaclesList = obstacles.copy()
-        while (len(obstaclesList) > 0):
-            obstacle = obstaclesList.pop(0)
-            pygame.draw.rect(self.map, self.black, obstacle)
-
+    def drawObs(self, objects):
+        for obj in objects['obstacles']:
+            pygame.draw.rect(self.map, self.black, obj)
+        for obj in objects['bumpers']:
+            pygame.draw.rect(self.map, self.grey, obj, width=1)
 
 class RRTGraph:
     def __init__(self, start, goal, MapDimensions):
@@ -74,43 +73,22 @@ class RRTGraph:
         self.path = []
 
     # Make obstacles and safety boundaries (David)
-    def makeobs(self):
-        wall = 10
+    def makeObs(self, rect_arguments):
+        b = 40
 
-        # Map 1 driving through corners
-        obs = [pygame.Rect(0,150, 400, wall),
-               pygame.Rect(0,150, 400, wall),
-               pygame.Rect(550+wall, 0, wall, self.height-150),
-               pygame.Rect(400, 150, wall, self.height-150),
-               pygame.Rect(550+wall, self.height-150, self.width-150, wall)]
+        objects = {}
+        obstacles = []
+        bumpers = []
 
-        # Map 2 with some static obstacles
-        obs = [pygame.Rect(0, 100, 200, wall),
-               pygame.Rect(300, 300, 50, 30),
-               pygame.Rect(400, 0, wall, 460),
-               pygame.Rect(0, 450, 150, wall),
-               pygame.Rect(150, 350, 10, 200),
-               pygame.Rect(500, 100, 50, 30),
-               pygame.Rect(500, 400, 50, 30),
-               pygame.Rect(660, 300, 50, 30),
-               pygame.Rect(800, 200, wall, 400)]
+        for ob_arg in rect_arguments:
+            obstacles.append(pygame.Rect(ob_arg))
+            bumpers.append(pygame.Rect(ob_arg[0]-b/2, ob_arg[1]-b/2, ob_arg[2]+b, ob_arg[3]+b))
 
-        # Map 3 driving through a maze
-        obs = [pygame.Rect(125, 0, wall, 225),
-               pygame.Rect(125, 350, wall, 100),
-               pygame.Rect(125, 450, 500, wall),
-               pygame.Rect(300, 450, wall, 150),
-               pygame.Rect(125, 350 - wall, 200, wall),
-               pygame.Rect(325, 125, wall, 350 - 125),
-               pygame.Rect(475, 0, wall, 320),
-               pygame.Rect(625, 250 + wall, wall, 200),
-               pygame.Rect(625, 250, 150, wall),
-               pygame.Rect(775, 150, wall, 100 + wall),
-               pygame.Rect(625, 150, 150, wall),
-               pygame.Rect(775, 400, 225, wall)]
+        objects['obstacles'] = obstacles
+        objects['bumpers'] = bumpers
 
-        self.obstacles = obs.copy() # use this for checking whether samples crosses an obstacle
-        return obs
+        self.obstacles = bumpers.copy() # use this for checking whether samples crosses an obstacle
+        return objects
 
     def add_node(self, n, x, y):
         self.x.insert(n, x)
