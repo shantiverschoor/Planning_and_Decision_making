@@ -1,6 +1,7 @@
 import random
 import math
 import pygame
+from copy import deepcopy
 import numpy as np
 from scipy import interpolate
 
@@ -50,8 +51,10 @@ class RRTMap:
             pos1, pos2 = path[i], path[i + 1]
             if raw:
                 pygame.draw.line(self.map, self.red, pos1, pos2, self.edgeThickness)
+
             else:
                 pygame.draw.line(self.map, self.green, pos1, pos2, self.edgeThickness+1)
+
 
     def drawObs(self, objects):
         for obj in objects['obstacles']:
@@ -86,7 +89,7 @@ class RRTGraph:
 
     # Make obstacles and safety boundaries
     def makeObs(self, rect_arguments):
-        b = 40 # set obstacle enlargement
+        b = 50 # set obstacle enlargement
 
         objects = {}
         obstacles = []
@@ -244,22 +247,40 @@ class RRTGraph:
             self.connect(xnearest, n)
         return self.x, self.y, self.parent
 
-    def B_spline(self, waypoints):
-        x = []
-        y = []
+    def smooth(self, path, weight_data=0.25, weight_smooth=0.6, tolerance=0.000001):
+        """
+        Creates a smooth path for a n-dimensional series of coordinates.
+        Arguments:
+            path: List containing coordinates of a path
+            weight_data: Float, how much weight to update the data (alpha)
+            weight_smooth: Float, how much weight to smooth the coordinates (beta).
+            tolerance: Float, how much change per iteration is necessary to keep iterating.
+        Output:
+            new: List containing smoothed coordinates.
+        """
+        new = deepcopy(path)
+        new = []
+        for i in path:
+            new.append(list(i))
+        dims = len(path[0])
+        change = tolerance
 
-        for point in waypoints:
-            x.append(point[0])
-            y.append(point[1])
+        while change >= tolerance:
+            change = 0.0
+            for i in range(1, len(new) - 1):
+                for j in range(dims):
+                    x_i = path[i][j]
+                    y_i, y_prev, y_next = new[i][j], new[i - 1][j], new[i + 1][j]
 
-        tck, *rest = interpolate.splprep([x, y])
-        u = np.linspace(0, 1, num=3000)
-        smooth = interpolate.splev(u, tck)
-        X_smooth, Y_smooth = smooth
+                    y_i_saved = y_i
+                    y_i += weight_data * (x_i - y_i) + weight_smooth * (y_next + y_prev - (2 * y_i))
+                    new[i][j] = y_i
 
-        path = []
-        for x, y in zip(X_smooth, Y_smooth):
-            path.append((x, y))
-        # print("smooth:", path)
+                    change += abs(y_i - y_i_saved)
 
-        return path
+        newpath = []
+        for i in new:
+            newpath.append(list(i))
+
+        print("smooth:", newpath)
+        return new

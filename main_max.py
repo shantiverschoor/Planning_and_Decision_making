@@ -49,15 +49,16 @@ def main():
             pygame.display.update()
         iteration += 1
 
-    map.drawPath(graph.getPathCoords())
-    smooth_path = graph.B_spline(graph.getPathCoords())
-    map.drawPath(smooth_path, raw=False)
+    map.drawPath(graph.getPathCoords()) # red
+
+    smooth_path = graph.smooth(graph.getPathCoords())
+    map.drawPath(smooth_path, raw=False) # green
+
     pygame.display.update()
     pygame.event.clear()
     pygame.event.wait(0)
 
 if __name__ == "__main__":
-    main()
     result = False
     while not result: # Keep trying until the path to goal is found
         try:
