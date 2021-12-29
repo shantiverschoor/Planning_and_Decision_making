@@ -6,18 +6,19 @@ from obstacles_max import *
 
 def main():
     dimensions = (600, 1000)
+    #start = (250, 550) # start position 2 of obs3
     start = (50, 50)
     goal = (900, 550)
     iteration = 0
     t1 = 0
-    sampling_bias = 10 # Tune parameter on how much sampling you want towards the goal # David check
+    sampling_bias = 10 # Tune parameter on how much sampling you want towards the goal
     sampling_update = 1
 
     pygame.init()
     map = RRTMap(start, goal, dimensions)
     graph = RRTGraph(start, goal, dimensions)
 
-    obstacles = graph.makeObs(obs1) #set obstacle map
+    obstacles = graph.makeObs(obs2) #set obstacle map
 
     map.drawMap(obstacles)
 
@@ -49,11 +50,14 @@ def main():
         iteration += 1
 
     map.drawPath(graph.getPathCoords())
+    smooth_path = graph.B_spline(graph.getPathCoords())
+    map.drawPath(smooth_path, raw=False)
     pygame.display.update()
     pygame.event.clear()
     pygame.event.wait(0)
 
 if __name__ == "__main__":
+    main()
     result = False
     while not result: # Keep trying until the path to goal is found
         try:

@@ -1,6 +1,8 @@
 import random
 import math
 import pygame
+import numpy as np
+from scipy import interpolate
 
 class RRTMap:
     def __init__(self, start, goal, MapDimensions):
@@ -37,9 +39,19 @@ class RRTMap:
         pygame.draw.circle(self.map, self.green, self.goal, self.nodeRad + 20, 1)
         self.drawObs(objects)
 
-    def drawPath(self, path):
-        for node in path:
-            pygame.draw.circle(self.map, self.red, node, self.nodeRad+3, 0)
+    def drawPath(self, path, raw=True):
+        # draw nodes in red that are in the path
+        if raw:
+            for node in path:
+                pygame.draw.circle(self.map, self.red, node, self.nodeRad+3, 0)
+
+        # draw edges in red that are in the path
+        for i in range(len(path) - 1):
+            pos1, pos2 = path[i], path[i + 1]
+            if raw:
+                pygame.draw.line(self.map, self.red, pos1, pos2, self.edgeThickness)
+            else:
+                pygame.draw.line(self.map, self.green, pos1, pos2, self.edgeThickness+1)
 
     def drawObs(self, objects):
         for obj in objects['obstacles']:
@@ -72,9 +84,9 @@ class RRTGraph:
         self.goalstate = None
         self.path = []
 
-    # Make obstacles and safety boundaries (David)
+    # Make obstacles and safety boundaries
     def makeObs(self, rect_arguments):
-        b = 40
+        b = 40 # set obstacle enlargement
 
         objects = {}
         obstacles = []
@@ -168,7 +180,7 @@ class RRTGraph:
     # Create a node between two nodes given a predefined radius
     def step(self, nnear, nrand):
         d = self.distance(nnear, nrand)
-        dmax = 35 # maximum radius of each edge (fine tune parameter)
+        dmax = 30 # maximum radius of each edge (fine tune parameter)
 
         if d > dmax:
             u = dmax/d
@@ -231,3 +243,23 @@ class RRTGraph:
             self.step(xnearest, n)
             self.connect(xnearest, n)
         return self.x, self.y, self.parent
+
+    def B_spline(self, waypoints):
+        x = []
+        y = []
+
+        for point in waypoints:
+            x.append(point[0])
+            y.append(point[1])
+
+        tck, *rest = interpolate.splprep([x, y])
+        u = np.linspace(0, 1, num=3000)
+        smooth = interpolate.splev(u, tck)
+        X_smooth, Y_smooth = smooth
+
+        path = []
+        for x, y in zip(X_smooth, Y_smooth):
+            path.append((x, y))
+        # print("smooth:", path)
+
+        return path
