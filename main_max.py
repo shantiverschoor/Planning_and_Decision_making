@@ -54,6 +54,8 @@ def main():
     smooth_path = graph.smooth(graph.getPathCoords())
     map.drawPath(smooth_path, raw=False) # green
 
+    map.animate(smooth_path[::-1], 'car.png')
+
     pygame.display.update()
     pygame.event.clear()
     pygame.event.wait(0)
@@ -64,5 +66,6 @@ if __name__ == "__main__":
         try:
             main()
             result = True
-        except:
+        except Exception as e:
+            print(e)
             result = False

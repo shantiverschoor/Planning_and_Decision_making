@@ -4,6 +4,7 @@ import pygame
 from copy import deepcopy
 import numpy as np
 from scipy import interpolate
+import time
 
 class RRTMap:
     def __init__(self, start, goal, MapDimensions):
@@ -61,6 +62,51 @@ class RRTMap:
             pygame.draw.rect(self.map, self.black, obj)
         for obj in objects['bumpers']:
             pygame.draw.rect(self.map, self.grey, obj, width=1)
+
+    def animate(self, path, img):
+        img = pygame.image.load(img)
+        imgh = img.get_height()
+        imgw = img.get_width()
+
+        f = 0.5
+        img = pygame.transform.scale(img, (imgw*f, imgh*f))
+
+        imgh = img.get_height()
+        imgw = img.get_width()
+
+        angle1 = 270
+
+        for i, c in enumerate(path):
+            if i == len(path)-1:
+                break
+
+            x2, x1 =  path[i+1][0], c[0]
+            y2, y1 =  path[i+1][1], c[1]
+
+            xdiff, ydiff = x2-x1, y2-y1
+
+            angle2 = 270 - math.degrees(math.atan(ydiff/xdiff))
+
+            acc = 500
+            for i in range(0,acc+1):
+                x = i *((x2-x1)/acc) + x1
+                y = i *((y2-y1)/acc) + y1
+                angle = i *((angle2-angle1)/acc) + angle1
+
+                rotated_img = pygame.transform.rotate(img, angle)
+
+                loc = (x-imgw/2, y-imgh/2)
+                new_rect = rotated_img.get_rect(center=img.get_rect(topleft = loc).center)
+
+                self.map.fill(self.white)
+                self.drawPath(path, raw=False)
+                self.map.blit(rotated_img, new_rect.topleft)
+                pygame.display.update()
+                pygame.event.clear()
+
+                #time.sleep(0.005)
+
+            angle1 = angle2
 
 class RRTGraph:
     def __init__(self, start, goal, MapDimensions):
