@@ -295,6 +295,7 @@ class RRTGraph:
 
     def smooth(self, path, weight_data=0.25, weight_smooth=0.6, tolerance=0.000001):
         """
+        https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
         Creates a smooth path for a n-dimensional series of coordinates.
         Arguments:
             path: List containing coordinates of a path
