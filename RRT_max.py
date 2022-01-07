@@ -293,7 +293,7 @@ class RRTGraph:
             self.connect(xnearest, n)
         return self.x, self.y, self.parent
 
-    def smooth(self, path, weight_data=0.25, weight_smooth=0.6, tolerance=0.000001):
+    def smooth(self, path, weight_data=0.25, weight_smooth=0.5, tolerance=0.000001):
         """
         https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
         Creates a smooth path for a n-dimensional series of coordinates.

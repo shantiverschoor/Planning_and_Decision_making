@@ -53,6 +53,8 @@ def main():
             pygame.display.update()
         iteration += 1
 
+    t2 = time.time()
+
     # Draw raw path and smooth path
     map.drawPath(graph.getPathCoords()) # red
     smooth_path = graph.smooth(graph.getPathCoords())
@@ -60,7 +62,7 @@ def main():
 
     # Animation of the car driving the computed path from start to goal
     print('[info] Start animation')
-    map.animate(smooth_path[::-1], 'car.png')
+    # map.animate(smooth_path[::-1], 'car.png')
 
     pygame.display.update()
     pygame.event.clear()
