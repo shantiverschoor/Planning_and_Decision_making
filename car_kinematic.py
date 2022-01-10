@@ -1,79 +1,33 @@
-from scipy.integrate import odeint
 import numpy as np
-import matplotlib.pyplot as plt
-import math
-import random
+l = 0.5
+dt = 0.1
+def BW_kinematics(confgs):
+    vn = [0]
+    deltan = [0]
+    for Xn in range(len(confgs)-1):
+        x_dot = confgs[Xn+1][0] - confgs[Xn][0]
+        theta_dot = confgs[Xn+1][2] - confgs[Xn][2]
 
-# State constraints and limitations on inputs
-delta_min = -30*np.pi/180 # Minimum steering angle [rad]
-delta_max = 30*np.pi/180 # Maximum steering angle [rad]
+        v = (x_dot) * np.cos(confgs[Xn][2])
+        vn.append(v)
 
-v_min = 0 # Minimum longitudinal velocity [m/s]
-v_max = 3 # Maximum longitudinal velocity [m/s]
+        if v == 0:
+            deltan.append(0)
+        else:
+            delta = np.arctan(l*theta_dot/v)
+            deltan.append(delta)
 
-'''
-    The implementation of the kinematic bicycle model in the RRT path planning algorithm:
+    inputs = list(zip(vn, deltan))
+    return inputs
 
-    State represented by Xn = [x, y, theta], where: 
-        x, y are the coordinates located at the center of the rear axle [m]
-        theta is orientation of the car [rad]
-        
-    Inputs: Xn - current state; a list
-            u - input specified as [v_delta, a]
-    Output: Xn_dot - derivative of Xn specified as [x_dot, y_dot, theta_dot]
-'''
+def FW_kinematics(inputs):
+    xn = [50]
+    yn = [50]
+    for i in range(len(inputs) - 1):
+        theta = (inputs[i][0] / l) * np.tan(inputs[i][1])
 
-def car_model(Xn, u):
-    # Unpack state variables
-    x, y, theta = Xn
-    x = float(x)
-    y = float(y)
-    theta = float(theta)
+        xn.append(xn[i] + inputs[i][0] * np.cos(theta))
+        yn.append(yn[i] + inputs[i][0] * np.sin(theta))
 
-    # Unpack input variables
-    v, delta = u
-    delta = float(delta)
-    v = float(v)
-
-    L = 0.5 # wheelbase [m]
-
-    # Implement the state constraints on the steering angle (delta) and longitudinal speed (v)
-    if delta > delta_max:
-        delta = delta_max
-    elif delta < delta_min:
-        delta = delta_min
-
-    if v > v_max:
-        v = v_max
-    elif v < v_min:
-        v = v_min
-
-    # Equations of motion
-    x_dot = v * np.cos(theta)
-    y_dot = v * np.sin(theta)
-    theta_dot = (v / L) * np.tan(delta)
-
-    # Derivative of state Xn
-    Xn_dot = np.array([x_dot, y_dot, theta_dot])
-
-    return Xn_dot
-
-'''
-    new_state: This function uses Fourth-Order Runge-Kutta (RK4) method for calculating an approximation of the next state Xn+1
-    Inputs: Xn - current state; a list
-            u - input of the model 
-    Output: Xnew - the next state Xn+1 with respect to the current state Xn
-'''
-
-def new_state(Xn, u):
-    # RK4 method
-    k1 = car_model(Xn, u)
-    k2 = car_model(Xn + k1 / 2, u)
-    k3 = car_model(Xn + k2 / 2, u)
-    k4 = car_model(Xn + k3, u)
-
-    delta_t = 0.2 # Step size
-
-    Xnew = Xn + (1/6) * (k1 + 2 * k2 + 2 * k3 + k4) * delta_t
-    Xnew = [float(Xnew[0]), float(Xnew[1]), float(Xnew[2])]
-    return Xnew
+    states = list(zip(xn, yn))
+    return states

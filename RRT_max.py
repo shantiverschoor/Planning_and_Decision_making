@@ -19,8 +19,10 @@ class RRTMap:
         self.blue = (0, 0, 255)
         self.green = (0, 255, 0)
         self.red = (255, 0, 0)
+        self.yellow = (255, 255, 0)
         self.white = (255, 255, 255)
         self.purple = (75, 0, 130)
+        self.baby_blue = (137, 207, 240)
 
         # Window settings
         self.MapWindowName = 'RRT path planning'
@@ -33,15 +35,13 @@ class RRTMap:
         self.nodeThickness = 0
         self.edgeThickness = 1
 
-        # Obstacles
-        self.obstacles = []
 
     def drawMap(self, objects):
         pygame.draw.circle(self.map, self.green, self.start, self.nodeRad+5, 0)
-        pygame.draw.circle(self.map, self.green, self.goal, self.nodeRad + 20, 1)
+        pygame.draw.circle(self.map, self.red, self.goal, self.nodeRad+20, 1)
         self.drawObs(objects)
 
-    def drawPath(self, path, raw=True):
+    def drawPath(self, path, raw=True, color=(0, 0, 255)):
         # draw nodes in red that are in the path
         if raw:
             for node in path:
@@ -63,12 +63,42 @@ class RRTMap:
         for obj in objects['bumpers']:
             pygame.draw.rect(self.map, self.grey, obj, width=1)
 
-    def animate(self, path, img):
+    def configuration(self, path):
+        angle1 = 270
+        confgs = []
+
+        # extract the (x,y) pixel coordinates from the nodes
+        for p, c in enumerate(path):
+            if p == len(path)-1: # stop when the goal is achieved
+                break
+
+            x2, x1 =  path[p+1][0], c[0]
+            y2, y1 =  path[p+1][1], c[1]
+
+            # Using pythagoras to find the angle that is tangent to path (line between two nodes)
+            w, h = x2-x1, y2-y1
+            r =(w**2 + h**2)**0.5
+            angle2 =  270 - math.degrees(math.atan2(math.sin(math.asin(h/r)), math.cos(math.acos(w/r))))
+            acc = 100 # speed of the car
+            for i in range(0,acc+1):
+                # Interpolation of the angles to find the orientation of the car
+                x = i *((x2-x1)/acc) + x1
+                y = i *((y2-y1)/acc) + y1
+                angle = i * (angle2-angle1)/acc + angle1
+
+                confg = (x, y, angle) # state of the car
+                confgs.append(confg)
+
+            angle1 = angle2
+
+        return confgs
+
+    def animate(self, obstacles, path, img):
         img = pygame.image.load(img)
         imgh = img.get_height()
         imgw = img.get_width()
 
-        f = 0.5
+        f = 0.05
         img = pygame.transform.scale(img, (imgw*f, imgh*f))
 
         imgh = img.get_height()
@@ -76,35 +106,38 @@ class RRTMap:
 
         angle1 = 270
 
-        for i, c in enumerate(path):
-            if i == len(path)-1:
+        # extract the (x,y) pixel coordinates from the nodes
+        for p, c in enumerate(path):
+            if p == len(path)-1: # stop when the goal is achieved
                 break
 
-            x2, x1 =  path[i+1][0], c[0]
-            y2, y1 =  path[i+1][1], c[1]
+            x2, x1 =  path[p+1][0], c[0]
+            y2, y1 =  path[p+1][1], c[1]
 
-            xdiff, ydiff = x2-x1, y2-y1
+            # Using pythagoras to find the angle that is tangent to path (line between two nodes)
+            w, h = x2-x1, y2-y1
 
-            angle2 = 270 - math.degrees(math.atan(ydiff/xdiff))
+            angle2 =  270 - math.degrees(math.atan2(h,w))
 
-            acc = 500
+            acc = 200 # speed of the car
             for i in range(0,acc+1):
+                # Interpolation of the angles to find the orientation of the car
                 x = i *((x2-x1)/acc) + x1
                 y = i *((y2-y1)/acc) + y1
-                angle = i *((angle2-angle1)/acc) + angle1
+                angle = i * (angle2-angle1)/acc + angle1
 
-                rotated_img = pygame.transform.rotate(img, angle)
+                rotated_img = pygame.transform.rotate(img, np.abs(angle))
 
                 loc = (x-imgw/2, y-imgh/2)
                 new_rect = rotated_img.get_rect(center=img.get_rect(topleft = loc).center)
 
-                self.map.fill(self.white)
+                self.map.fill(self.baby_blue)
                 self.drawPath(path, raw=False)
+                self.drawPath(path[:p+1], raw=False, color=self.yellow)
+                self.drawMap(obstacles)
                 self.map.blit(rotated_img, new_rect.topleft)
                 pygame.display.update()
                 pygame.event.clear()
-
-                #time.sleep(0.005)
 
             angle1 = angle2
 
@@ -135,7 +168,7 @@ class RRTGraph:
 
     # Make obstacles and safety boundaries
     def makeObs(self, rect_arguments):
-        b = 50 # set obstacle enlargement
+        b = 60 # set obstacle enlargement
 
         objects = {}
         obstacles = []
@@ -270,7 +303,6 @@ class RRTGraph:
         for node in self.path:
             x, y = (self.x[node], self.y[node])
             pathCoords.append((x, y))
-        print(pathCoords)
         return pathCoords
 
     # Using heuristic function to expand in the direction of the goal
@@ -293,7 +325,7 @@ class RRTGraph:
             self.connect(xnearest, n)
         return self.x, self.y, self.parent
 
-    def smooth(self, path, weight_data=0.25, weight_smooth=0.5, tolerance=0.000001):
+    def smooth(self, path, weight_data=0.25, weight_smooth=0.4, tolerance=0.000001):
         """
         https://medium.com/@jaems33/understanding-robot-motion-path-smoothing-5970c8363bc4
         Creates a smooth path for a n-dimensional series of coordinates.
@@ -328,6 +360,5 @@ class RRTGraph:
         newpath = []
         for i in new:
             newpath.append(list(i))
-
-        print("smooth:", newpath)
         return new
+

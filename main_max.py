@@ -3,11 +3,15 @@ from RRT_max import RRTGraph
 from RRT_max import RRTMap
 import time
 from obstacles_max import *
+from car_kinematic import *
 
 def main():
 
     # Map info
-    dimensions = (600, 1000)
+    height = 600
+    width = 1000
+    dimensions = (height,width)
+
     start = (50, 50)
     # start = (250, 550) # start position 2 of obs3
     goal = (900, 550)
@@ -24,9 +28,10 @@ def main():
     graph = RRTGraph(start, goal, dimensions)
 
     # setup obstacles in the map
-    obstacles = graph.makeObs(obs2)
+    obstacles = graph.makeObs(obs3)
     map.drawMap(obstacles)
 
+    time.sleep(1)
     t1 = time.time()
     while (not graph.path_to_goal()): # Stop simulation when the path to the goal is found
         elapsed = time.time() - t1
@@ -53,16 +58,20 @@ def main():
             pygame.display.update()
         iteration += 1
 
-    t2 = time.time()
-
     # Draw raw path and smooth path
     map.drawPath(graph.getPathCoords()) # red
     smooth_path = graph.smooth(graph.getPathCoords())
     map.drawPath(smooth_path, raw=False) # green
+    pygame.display.update()
+    time.sleep(1)
+
+    confgs = map.configuration(smooth_path)
+    inputs = BW_kinematics(confgs)
+    states = FW_kinematics(inputs)
 
     # Animation of the car driving the computed path from start to goal
     print('[info] Start animation')
-    # map.animate(smooth_path[::-1], 'car.png')
+    map.animate(obstacles, smooth_path[::-1], 'car.png')
 
     pygame.display.update()
     pygame.event.clear()
@@ -77,4 +86,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(e)
             result = False
-

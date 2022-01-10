@@ -56,9 +56,14 @@ def car_model(Xn, u): # Use this for simulation
     # Equations of motion
     x_dot = v * np.cos(theta)
     y_dot = v * np.sin(theta)
-    delta_dot = v_delta
-    v_dot = a
     theta_dot = (v / L) * np.tan(delta)
+    v_dot = a
+    delta_dot = v_delta
+
+    B = np.array([[np.cos(theta), 0], [np.sin(theta), 0], [(1/L)*np.tan(delta), 0], [0, 1]])
+    B =
+    signal.StateSpace()
+
 
     # Derivative of state Xn
     Xn_dot = np.array([x_dot, y_dot, theta_dot, v_dot, delta_dot])
@@ -100,6 +105,19 @@ def new_state(Xn, u):
     Xnew = [float(Xnew[0]), float(Xnew[1]), float(Xnew[2]), float(Xnew[3]), float(Xnew[4])]
     return Xnew
 
+def new_state_RK4(Xn, u):
+    # RK4 method
+    k1 = car_model(Xn, u)
+    k2 = car_model(Xn + k1 / 2, u)
+    k3 = car_model(Xn + k2 / 2, u)
+    k4 = car_model(Xn + k3, u)
+
+    delta_t = 0.2 # Step size
+
+    Xnew = Xn + (1/6) * (k1 + 2 * k2 + 2 * k3 + k4) * delta_t
+    Xnew = [float(Xnew[0]), float(Xnew[1]), float(Xnew[2]), float(Xnew[3]), float(Xnew[4])]
+    return Xnew
+
 '''
     select_input: This function is calculate the next state for the vehicle dynamics. 
     It tries out the delta_f from min_steer angle to max_steer angle to 
@@ -109,7 +127,7 @@ def new_state(Xn, u):
     Output: the best next state available 
 '''
 
-def select_input(Xrand, Xnear, obs):
+def select_input(Xrand, Xnear):
 
     # Start with minimal input
     delta_dot = delta_dot_min
