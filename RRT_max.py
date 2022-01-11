@@ -303,7 +303,17 @@ class RRTGraph:
         for node in self.path:
             x, y = (self.x[node], self.y[node])
             pathCoords.append((x, y))
+
         return pathCoords
+
+    def pathLength(self, list_):
+        if len(list_) == 1:
+            return 0
+        else:
+            diffx = list_[-1][0] - list_[-2][0]
+            diffy = list_[-1][1] - list_[-2][1]
+            dist = math.sqrt(diffx**2 + diffy**2)
+            return dist + self.pathLength(list_[:-1])
 
     # Using heuristic function to expand in the direction of the goal
     def bias(self, ngoal):
