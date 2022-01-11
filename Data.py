@@ -5,6 +5,7 @@ trials_obs2 = np.array([2.718, 1.704, 1.211, 1.532, 1.277, 1.171, 1.823, 1.273, 
 trials_obs3 = np.array([4.321, 4.565, 2.078, 3.355, 2.088, 2.883, 4.084, 3.757, 2.970, 3.905, 2.464, 3.817, 2.411, 3.534, 3.248])
 print(f"mean and std of computational time of map 2 {np.mean(trials_obs2)} and {np.std(trials_obs2)}, respectively.")
 print(f"mean and std of computational time of map 3 {np.mean(trials_obs3)} and {np.std(trials_obs3)}, respectively.")
+print(1%10)
 
 # Goal Oriented RRT
 # trials_obs3 = np.array([2.788, 3.160, 4.0219, 3.676, 3.620, 2.966, 3.007, 2.405, 2.396, 3.757, 2.525, 2.890, 1.905, 2.578, 2.776])

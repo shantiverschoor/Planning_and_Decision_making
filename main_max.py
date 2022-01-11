@@ -19,7 +19,7 @@ def main():
     iteration = 0
     t1 = 0
 
-    sampling_bias = 1000000 # Tune parameter on how much sampling you want towards the goal
+    sampling_bias = 10 # Tune parameter on how much sampling you want towards the goal
     sampling_update = 1 # Update map
 
     # Setup simulation
@@ -44,7 +44,7 @@ def main():
         # A bias is used for expanding the tree such that 100%/Bias will be based on expanding towards the goal and
         # an 100% - 100%/Bias will be based on random expansions
 
-        if iteration  == -1: # heuristic sampling
+        if iteration % sampling_bias == 0: # heuristic sampling
             X, Y, Parent = graph.bias(goal)
             pygame.draw.circle(map.map, map.grey, (X[-1], Y[-1]), map.nodeRad+2, 0)
             pygame.draw.line(map.map, map.blue, (X[-1], Y[-1]), (X[Parent[-1]], Y[Parent[-1]]),
