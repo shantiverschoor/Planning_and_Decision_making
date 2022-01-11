@@ -8,13 +8,16 @@ def BW_kinematics(confgs):
         x_dot = confgs[Xn+1][0] - confgs[Xn][0]
         theta_dot = confgs[Xn+1][2] - confgs[Xn][2]
 
-        v = (x_dot) * np.cos(confgs[Xn][2])
-        vn.append(v)
+        if x_dot == 0:
+            vn.append(0)
+        else:
+            vn.append(np.cos(confgs[Xn][2])/(x_dot))
 
-        if v == 0:
+
+        if vn[Xn] == 0:
             deltan.append(0)
         else:
-            delta = np.arctan(l*theta_dot/v)
+            delta = np.arctan(l*theta_dot/vn[Xn])
             deltan.append(delta)
 
     inputs = list(zip(vn, deltan))
@@ -26,8 +29,8 @@ def FW_kinematics(inputs):
     for i in range(len(inputs) - 1):
         theta = (inputs[i][0] / l) * np.tan(inputs[i][1])
 
-        xn.append(xn[i] + inputs[i][0] * np.cos(theta))
-        yn.append(yn[i] + inputs[i][0] * np.sin(theta))
+        xn.append(inputs[i][0] * np.cos(theta))
+        yn.append(inputs[i][0] * np.sin(theta))
 
     states = list(zip(xn, yn))
     return states
