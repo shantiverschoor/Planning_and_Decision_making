@@ -13,7 +13,6 @@ class RRTMap:
         self.MapDimensions = MapDimensions
         self.height, self.width = self.MapDimensions
 
-        # Colors
         self.grey = (70, 70, 70)
         self.black = (0, 0, 0)
         self.blue = (0, 0, 255)
@@ -24,13 +23,11 @@ class RRTMap:
         self.purple = (75, 0, 130)
         self.baby_blue = (137, 207, 240)
 
-        # Window settings
         self.MapWindowName = 'RRT path planning'
         pygame.display.set_caption(self.MapWindowName)
         self.map = pygame.display.set_mode((self.width, self.height))
         self.map.fill(self.white)
 
-        # Node and edges
         self.nodeRad = 2
         self.nodeThickness = 0
         self.edgeThickness = 1
@@ -42,12 +39,12 @@ class RRTMap:
         self.drawObs(objects)
 
     def drawPath(self, path, raw=True, color=(0, 0, 255)):
-        # draw nodes in red that are in the path
+        # Draw nodes in red that are in the path
         if raw:
             for node in path:
                 pygame.draw.circle(self.map, self.red, node, self.nodeRad+3, 0)
 
-        # draw edges in red that are in the path
+        # Draw edges in red that are in the path
         for i in range(len(path) - 1):
             pos1, pos2 = path[i], path[i + 1]
             if raw:
@@ -58,8 +55,10 @@ class RRTMap:
 
 
     def drawObs(self, objects):
+        # Draw the obstacles
         for obj in objects['obstacles']:
             pygame.draw.rect(self.map, self.black, obj)
+        # Inflate obstacles with a safety marging to avoid collision
         for obj in objects['bumpers']:
             pygame.draw.rect(self.map, self.grey, obj, width=1)
 
@@ -67,7 +66,7 @@ class RRTMap:
         angle1 = 270
         confgs = []
 
-        # extract the (x,y) pixel coordinates from the nodes
+        # Extract the (x,y) pixel coordinates from the nodes
         for p, c in enumerate(path):
             if p == len(path)-1: # stop when the goal is achieved
                 break
@@ -75,18 +74,18 @@ class RRTMap:
             x2, x1 =  path[p+1][0], c[0]
             y2, y1 =  path[p+1][1], c[1]
 
-            # Using pythagoras to find the angle that is tangent to path (line between two nodes)
+            # Using Pythagoras to find the angle that is tangent to path (line between two nodes)
             w, h = x2-x1, y2-y1
             r =(w**2 + h**2)**0.5
             angle2 =  270 - math.degrees(math.atan2(math.sin(math.asin(h/r)), math.cos(math.acos(w/r))))
-            acc = 100 # speed of the car
+            acc = 100   # Number of interpolation points betweed two vertices in graph;
+                        # may determine driving speed of vehicle in animation due to computationel limitations 
             for i in range(0,acc+1):
-                # Interpolation of the angles to find the orientation of the car
                 x = i *((x2-x1)/acc) + x1
                 y = i *((y2-y1)/acc) + y1
                 angle = i * (angle2-angle1)/acc + angle1
 
-                confg = (x, y, angle) # state of the car
+                confg = (x, y, angle) # Configuration of the car
                 confgs.append(confg)
 
             angle1 = angle2
@@ -106,7 +105,7 @@ class RRTMap:
 
         angle1 = 270
 
-        # extract the (x,y) pixel coordinates from the nodes
+        # Extract the (x,y) pixel coordinates from the nodes
         for p, c in enumerate(path):
             if p == len(path)-1: # stop when the goal is achieved
                 break
@@ -149,26 +148,24 @@ class RRTGraph:
         self.goalFlag = False
         self.height, self.width = MapDimensions
 
-        # list to store x and y coordinates and the parent of the child node
+        # Initiatie lists to store x and y coordinates and the parent of the child node
         self.x = []
         self.y = []
         self.parent = []
 
-        # Initialize the tree
+        # Initialize the tree structure
         self.x.append(x)
         self.y.append(y)
         self.parent.append(0)
 
-        # Obstacles
         self.obstacles = []
 
-        # Path
         self.goalstate = None
         self.path = []
 
     # Make obstacles and safety boundaries
     def makeObs(self, rect_arguments):
-        b = 60 # set obstacle enlargement
+        b = 60 # Set obstacles enlargement (inflation for safety)
 
         objects = {}
         obstacles = []
@@ -181,7 +178,7 @@ class RRTGraph:
         objects['obstacles'] = obstacles
         objects['bumpers'] = bumpers
 
-        self.obstacles = bumpers.copy() # use this for checking whether samples crosses an obstacle
+        self.obstacles = bumpers.copy() # Use this for checking whether samples crosses an obstacle
         return objects
 
     def add_node(self, n, x, y):
@@ -201,7 +198,6 @@ class RRTGraph:
     def number_of_nodes(self):
         return len(self.x)
 
-    # Euclidean distance
     def distance(self, n1, n2):
         (x1, y1) = (self.x[n1], self.y[n1])
         (x2, y2) = (self.x[n2], self.y[n2])
@@ -209,7 +205,7 @@ class RRTGraph:
         py = (float(y1)-float(y2))**2
         return (px+py)**(0.5)
 
-    # Create random samples
+    # Sample random point within workspace
     def sample_env(self):
         x = int(random.uniform(0, self.width))
         y = int(random.uniform(0, self.height))
@@ -237,7 +233,7 @@ class RRTGraph:
                 return False # Sample is in the obstacle space
         return True # Sample is in the Free space
 
-    # obstacle detection
+    # Check if the connection betweed nodes will intersect with an obstacle
     def crossObstacle(self, x1, x2, y1, y2):
         obs = self.obstacles.copy()
         while len(obs) > 0:
@@ -250,6 +246,7 @@ class RRTGraph:
                     return True # edge does cross at least one obstacle
         return False # edge does not cross an obstacle
 
+    # Create edge between two vertices
     def connect(self, n1, n2):
         (x1, y1) = (self.x[n1], self.y[n1])
         (x2, y2) = (self.x[n2], self.y[n2])
@@ -275,8 +272,7 @@ class RRTGraph:
                       int(ynear + dmax*math.sin(theta)))
             self.remove_node(nrand)
 
-            # When we are close to the goal instead of creating a random node, we use the goal node
-            # This stops the weird behavior we had that we go beyond the goal (tell in report)
+            # When close to the goal: instead of creating a random node, pick the goal node
             if (abs(x-self.goal[0]) < dmax) and (abs(y-self.goal[1]) < dmax):
                 self.add_node(nrand, self.goal[0], self.goal[1])
                 self.goalstate = nrand
@@ -297,7 +293,7 @@ class RRTGraph:
         return self.goalFlag
 
     # Get path coordinates from start to goal
-    # This will be used when simulating the drive of the mobile robot
+    # Use when simulating the drive of the mobile robot
     def getPathCoords(self):
         pathCoords = []
         for node in self.path:

@@ -1,4 +1,5 @@
 import numpy as np
+
 l = 0.5
 dt = 0.1
 def BW_kinematics(confgs):

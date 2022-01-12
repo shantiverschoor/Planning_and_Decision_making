@@ -1,6 +1,6 @@
 height, width = 20, 1600
 
-# no obstacles
+# Empty, testing puposes
 obs1= [] 
 
 # square obstacles
@@ -48,6 +48,6 @@ obs3 = [(125, 0, 20, 225),
 #       (745, 360, 1, 190),
 #       (745, 550, 155, 1)
 
-# trapped in corner
+# Trapped in corner
 obs4 = [(125, 0, 20, 225),
         (20, 225, 200, 20)]
