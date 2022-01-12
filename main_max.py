@@ -61,9 +61,6 @@ def main():
     t_end = time.time()
     print((t_end - t_start))
 
-    trials = [2.788, 3.160, 4.0219, 3.676, 3.620, 2.966, 3.007, 2.405, 2.396, 3.757, 2.525, 2.890, 1.905, 2.578, 2.776]
-    trials_obs3 = np.array([4.321, 4.565, 2.078, 3.355, 2.088, 2.883, 4.084, 3.757, 2.970, 3.905, 2.464, 3.817, 2.411, 3.534, 3.248])
-
     pathCoords = graph.getPathCoords()
     map.drawPath(pathCoords) # red
     pathLen = graph.pathLength(pathCoords)
